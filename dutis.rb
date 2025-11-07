@@ -14,7 +14,7 @@ class Dutis < Formula
 
   if Hardware::CPU.intel?
     url "https://github.com/tobiashochguertel/dutis/releases/download/v0.2.1-fork/dutis_Darwin_x86_64.tar.gz"
-    sha256 "7e3c0e89f2231a00116c174fdf03b4545cf492d387c4c92c2a3a921d32a51544"
+    sha256 "0bcc9632ac2cd5e878484fca4d0b10cf7bc1bed5adecec78281335887e5de5e8"
 
     def install
       bin.install "dutis"
@@ -22,7 +22,7 @@ class Dutis < Formula
   end
   if Hardware::CPU.arm?
     url "https://github.com/tobiashochguertel/dutis/releases/download/v0.2.1-fork/dutis_Darwin_arm64.tar.gz"
-    sha256 "6437ec7443d2011ff8be53803e921d2f361b91dc548f39832acdf95c8c0aa1ec"
+    sha256 "806b5c23f4bc8e590120dc9fe1288ffd4c829615de302f1c4e965a018962d959"
 
     def install
       bin.install "dutis"

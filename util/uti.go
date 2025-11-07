@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -62,13 +63,14 @@ func ListApplicationsUti() map[string]Uti {
 	return ListUti("/Applications")
 }
 
-func SetDefaultApplication(uti string, suffix string) {
+func SetDefaultApplication(uti string, suffix string) error {
 	fmt.Println("Set default application for", suffix, "to", uti)
 	cmd := exec.Command("duti", "-s", uti, suffix, "all")
-	_, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("duti error: %w, output: %s", err, string(output))
 	}
+	return nil
 }
 
 func getFileContentType(path string) string {
@@ -81,7 +83,63 @@ func getFileContentType(path string) string {
 	return match[1]
 }
 
+func cleanApplicationPath(path string) string {
+	// Remove file:// prefix
+	path = strings.TrimPrefix(path, "file://")
+	
+	// URL decode (fixes %20, etc.)
+	decoded, err := url.QueryUnescape(path)
+	if err == nil {
+		path = decoded
+	}
+	
+	// Remove trailing slash
+	path = strings.TrimSuffix(path, "/")
+	
+	// Extract just the app name from various system paths
+	if strings.Contains(path, "/") {
+		// Common prefixes to remove
+		prefixes := []string{
+			"/Applications/",
+			"/System/Applications/",
+			"/System/Volumes/Preboot/Cryptexes/App/System/Applications/",
+			"/Setapp/",
+		}
+		
+		cleaned := false
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(path, prefix) {
+				path = strings.TrimPrefix(path, prefix)
+				cleaned = true
+				break
+			}
+		}
+		
+		// For any remaining paths (user directories, .cache, etc.), extract just the app name
+		if !cleaned && strings.Contains(path, "/") {
+			parts := strings.Split(path, "/")
+			for i := len(parts) - 1; i >= 0; i-- {
+				if strings.HasSuffix(parts[i], ".app") {
+					// Found the app, include parent folder if it's a utility folder
+					if i > 0 && (parts[i-1] == "Utilities" || parts[i-1] == "TeX") {
+						path = parts[i-1] + "/" + parts[i]
+					} else {
+						path = parts[i]
+					}
+					break
+				}
+			}
+		}
+	}
+	
+	return path
+}
+
 func LSCopyAllRoleHandlersForContentType(suf string) []string {
+	// Check cache first
+	if cached, ok := LoadRecommendedAppsCache(suf); ok {
+		return cached
+	}
 
 	contentFile, _ := os.CreateTemp("/tmp", "dutis-content.*"+suf)
 	defer func(name string) {
@@ -127,9 +185,28 @@ guard let bundleIds = LSCopyAllRoleHandlersForContentType(fileType as CFString, 
 	if err != nil {
 		return []string{}
 	}
+	
 	applicationFullPathList := strings.Split(string(out), "\n")
-	for i := range applicationFullPathList {
-		applicationFullPathList[i] = strings.TrimLeft(applicationFullPathList[i], "file:///Applications/")
+	var cleanedList []string
+	seen := make(map[string]bool)
+	
+	for _, path := range applicationFullPathList {
+		if path == "" {
+			continue
+		}
+		cleaned := cleanApplicationPath(path)
+		if cleaned == "" {
+			continue
+		}
+		// Deduplicate
+		if !seen[cleaned] {
+			seen[cleaned] = true
+			cleanedList = append(cleanedList, cleaned)
+		}
 	}
-	return applicationFullPathList
+	
+	// Save to cache
+	_ = SaveRecommendedAppsCache(suf, cleanedList)
+	
+	return cleanedList
 }

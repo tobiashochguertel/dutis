@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.1-fork] - 2024-11-07
+
+### Fixed
+- Module path in go.mod to enable proper `go install` from fork
+- Import paths to use fork repository
+
+### Added
+- `version` subcommand to display version information
+- Improved GitHub Actions workflows (separated CI from release)
+
 ## [v0.2.0-fork] - 2024-11-07
 
 ### Added

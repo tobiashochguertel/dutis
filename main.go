@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Version    = "v0.2.0-fork"
+	Version    = "v0.2.1-fork"
 	Repository = "https://github.com/tobiashochguertel/dutis"
 )
 
@@ -147,6 +147,7 @@ func showHelp() {
 	fmt.Println("  apply               Apply all configured associations from config")
 	fmt.Println("  list                List all configured associations")
 	fmt.Println("  remove <suffix>     Remove association for a suffix")
+	fmt.Println("  version, -v         Show version information")
 	fmt.Println("  --refresh-cache     Refresh the application cache")
 	fmt.Println("  help, --help, -h    Show this help message")
 	fmt.Println()
@@ -223,6 +224,11 @@ func handleCommands() bool {
 			os.Exit(1)
 		}
 		fmt.Printf("✓ Removed association for: %s\n", suffix)
+		return true
+
+	case "version", "--version", "-v":
+		fmt.Printf("%s\n", Version)
+		fmt.Printf("Repository: %s\n", Repository)
 		return true
 
 	case "help", "--help", "-h":

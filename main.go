@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"github.com/mrtkrcm/dutis/util"
+	"os"
 	"strings"
 )
 
@@ -22,22 +23,71 @@ func chooseUti() string {
 		return prompt.FilterHasPrefix(p, d.GetWordBeforeCursor(), true)
 	}
 
-	t := prompt.Input("> ", promptHandler)
+	t := inputWithDoubleCtrlC("> ", promptHandler)
+	if t == "" {
+		return ""
+	}
 	fmt.Println(YouSelectPrompt + t)
 	return t
 }
 
 func chooseSuffix() string {
 	fmt.Println("Please input suffix.(Tab for auto complement)")
-	t := prompt.Input("> ", util.SuffixCompleter)
+	t := inputWithDoubleCtrlC("> ", util.SuffixCompleter)
+	if t == "" {
+		return ""
+	}
 	fmt.Println(YouSelectPrompt + t)
 	return t
 }
 
 func choosePreset() {
 	fmt.Println("Please input preset.(Tab for auto complement)")
-	t := prompt.Input("> ", util.PresetCompleter)
-	fmt.Println(YouSelectPrompt + t)
+	t := inputWithDoubleCtrlC("> ", util.PresetCompleter)
+	if t != "" {
+		fmt.Println(YouSelectPrompt + t)
+	}
+}
+
+func inputWithDoubleCtrlC(prefix string, completer prompt.Completer) string {
+	consecutiveInterrupts := 0
+
+	p := prompt.New(
+		func(s string) {
+			// Input executor - this is called when Enter is pressed
+			consecutiveInterrupts = 0
+		},
+		completer,
+		prompt.OptionPrefix(prefix),
+		prompt.OptionAddASCIICodeBind(
+			prompt.ASCIICodeBind{
+				ASCIICode: []byte{3}, // Ctrl+C (ASCII code 3)
+				Fn: func(buf *prompt.Buffer) {
+					consecutiveInterrupts++
+					if consecutiveInterrupts >= 2 {
+						fmt.Println("\nAre you sure you want to exit? (yes/no)")
+						confirm := prompt.Input("> ", func(d prompt.Document) []prompt.Suggest {
+							s := []prompt.Suggest{
+								{Text: "yes", Description: "Exit the application"},
+								{Text: "no", Description: "Continue"},
+							}
+							return prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), true)
+						})
+						if confirm == "yes" {
+							os.Exit(0)
+						}
+						consecutiveInterrupts = 0
+					} else {
+						// Clear the buffer and show message
+						buf.DeleteBeforeCursor(len(buf.Document().TextBeforeCursor()))
+						fmt.Println("\nPress Ctrl+C again to exit, or continue typing.")
+					}
+				},
+			},
+		),
+	)
+
+	return p.Input()
 }
 
 func printRecommend(suf string) {

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.0-fork] - 2024-11-07
+
+### Added
+- Completely redesigned GitHub Actions workflows
+- CI workflow (runs on every push, validates code)
+- Manual release workflow (no accidental releases)
+- Version subcommand (`dutis version`, `dutis -v`)
+- RELEASE.md with complete release process documentation
+- Single source of truth for version management
+
+### Changed
+- Separated CI from release process
+- Improved workflow efficiency with caching
+- Better version management (defined once in main.go)
+
+### Fixed
+- Version display now shows correct version
+- Fixed go vet warning in util/install.go
+- Module path properly set for fork
+
 ## [v0.2.1-fork] - 2024-11-07
 
 ### Fixed

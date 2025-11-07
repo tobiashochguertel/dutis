@@ -5,7 +5,7 @@
 class Dutis < Formula
   desc "A command-line tool to select default applications, based on duti (Fork with enhancements)"
   homepage "https://github.com/tobiashochguertel/dutis"
-  version "0.2.1-fork"
+  version "0.3.0-fork"
   license "MIT"
 
   depends_on "git"
@@ -13,16 +13,16 @@ class Dutis < Formula
   depends_on :macos
 
   if Hardware::CPU.intel?
-    url "https://github.com/tobiashochguertel/dutis/releases/download/v0.2.1-fork/dutis_Darwin_x86_64.tar.gz"
-    sha256 "0bcc9632ac2cd5e878484fca4d0b10cf7bc1bed5adecec78281335887e5de5e8"
+    url "https://github.com/tobiashochguertel/dutis/releases/download/v0.3.0-fork/dutis_Darwin_x86_64.tar.gz"
+    sha256 "b78107c2711b30d4b18a4e2488a78cec411adb9c76cb2d702c7fcb2d499f51d2"
 
     def install
       bin.install "dutis"
     end
   end
   if Hardware::CPU.arm?
-    url "https://github.com/tobiashochguertel/dutis/releases/download/v0.2.1-fork/dutis_Darwin_arm64.tar.gz"
-    sha256 "806b5c23f4bc8e590120dc9fe1288ffd4c829615de302f1c4e965a018962d959"
+    url "https://github.com/tobiashochguertel/dutis/releases/download/v0.3.0-fork/dutis_Darwin_arm64.tar.gz"
+    sha256 "2a38d651c0f34a6428c7bd1ca597215561c3582ff261a03d6db6849a35dd8907"
 
     def install
       bin.install "dutis"

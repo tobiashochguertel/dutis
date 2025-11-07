@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Version    = "v0.1.0-fork"
+	Version    = "v0.2.0-fork"
 	Repository = "https://github.com/tobiashochguertel/dutis"
 )
 

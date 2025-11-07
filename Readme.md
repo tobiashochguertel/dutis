@@ -143,4 +143,8 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed changes.
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/mrtkrcm/dutis.svg?variant=adaptive)](https://starchart.cc/mrtkrcm/dutis)
+[![Stargazers over time](https://starchart.cc/tobiashochguertel/dutis.svg?variant=adaptive)](https://starchart.cc/tobiashochguertel/dutis)
+
+## Original Project
+
+This is a fork of [mrtkrcm/dutis](https://github.com/mrtkrcm/dutis). See the original project for the base implementation.

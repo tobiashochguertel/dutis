@@ -22,4 +22,18 @@ go.work
 main
 .idea/
 
+# Build output
 dist/
+dutis
+
+# Cache directories (user data, not for version control)
+.cache/
+
+# macOS
+.DS_Store
+
+# Editor configs
+.vscode/
+*.swp
+*.swo
+*~

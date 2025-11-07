@@ -47,23 +47,27 @@ brews:
   - name: dutis
     # Template for the url which is determined by the given Token (github or gitlab)
     # Default for github is "https://github.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    url_template: "https://github.com/mrtkrcm/dutis/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/tobiashochguertel/dutis/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
-    homepage: https://github.com/mrtkrcm/dutis
+    repository:
+      owner: tobiashochguertel
+      name: dutis
+
+    homepage: https://github.com/tobiashochguertel/dutis
 
     # Git author used to commit to the repository.
     # Defaults are shown.
     commit_author:
-      name: mrtkrcm
-      email: mrtkrcm@gmail.com
+      name: Tobias Hochgürtel
+      email: tobias@hochguertel.com
 
     # Caveats for the user of your binary.
     # Default is empty.
-    caveats: ""
+    caveats: "This is an enhanced fork of mrtkrcm/dutis with performance improvements and config management."
 
     # Your app's description.
     # Default is empty.
-    description: "A command-line tool to select default applications, based on duti"
+    description: "A command-line tool to select default applications, based on duti (Fork with enhancements)"
 
     # SPDX identifier of your app's license.
     # Default is empty.
@@ -74,7 +78,10 @@ brews:
       - name: git
       - name: go
 
+    test: |
+      system "#{bin}/dutis", "help"
+
 release:
   github:
-    owner: mrtkrcm
+    owner: tobiashochguertel
     name: dutis

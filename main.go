@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
-	"github.com/mrtkrcm/dutis/util"
+	"github.com/tobiashochguertel/dutis/util"
 	"os"
 	"strings"
 	"sync"

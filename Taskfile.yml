@@ -44,7 +44,7 @@ tasks:
     generates:
       - '{{.BIN_DIR}}/{{.APP_NAME}}'
 
-  build:release:
+  build-release:
     desc: Build release binaries using goreleaser
     summary: |
       Build release artifacts using goreleaser (snapshot mode).
@@ -64,7 +64,7 @@ tasks:
       - rm -rf {{.DIST_DIR}} 2>/dev/null || true
       - echo "✅ Cleaned build artifacts"
 
-  clean:all:
+  clean-all:
     desc: Remove all generated files including caches
     cmds:
       - task: clean
@@ -101,15 +101,15 @@ tasks:
     cmds:
       - go test -v ./...
 
-  test:coverage:
+  test-coverage:
     desc: Run tests with coverage report
     cmds:
       - mkdir -p {{.ROOT_DIR}}/coverage
       - go test -v -coverprofile={{.ROOT_DIR}}/coverage/coverage.out ./...
       - go tool cover -html={{.ROOT_DIR}}/coverage/coverage.out -o {{.ROOT_DIR}}/coverage/coverage.html
-      - echo "✅ Coverage report: {{.ROOT_DIR}}/coverage/coverage.html"
+      - echo "✅ Coverage report{{":"}} {{.ROOT_DIR}}/coverage/coverage.html"
 
-  test:race:
+  test-race:
     desc: Run tests with race detector
     cmds:
       - go test -race -v ./...
@@ -131,7 +131,7 @@ tasks:
       - go fmt ./...
       - echo "✅ Code formatted"
 
-  fmt:check:
+  fmt-check:
     desc: Check if code is formatted
     cmds:
       - |
@@ -152,7 +152,7 @@ tasks:
   check:
     desc: Run all quality checks (fmt, vet, lint, test)
     cmds:
-      - task: fmt:check
+      - task: fmt-check
       - task: vet
       - task: lint
       - task: test
@@ -164,14 +164,14 @@ tasks:
       - go mod download
       - echo "✅ Dependencies downloaded"
 
-  deps:tidy:
+  deps-tidy:
     desc: Tidy and verify dependencies
     cmds:
       - go mod tidy
       - go mod verify
       - echo "✅ Dependencies tidied and verified"
 
-  deps:outdated:
+  deps-outdated:
     desc: Check for outdated dependencies
     summary: |
       List outdated Go dependencies.
@@ -182,7 +182,7 @@ tasks:
         echo "Checking for outdated dependencies..."
         go list -u -m all | grep '\[' || echo "✅ All dependencies up to date"
 
-  deps:upgrade:
+  deps-upgrade:
     desc: Upgrade all dependencies to latest
     cmds:
       - go get -u ./...
@@ -228,14 +228,14 @@ tasks:
         fi
       - goreleaser release {{.CLI_ARGS}}
 
-  release:snapshot:
+  release-snapshot:
     desc: Create a snapshot release (no git tag required)
     cmds:
       - goreleaser release --snapshot --clean
       - echo "✅ Snapshot release created in {{.DIST_DIR}}"
 
   # Git tasks
-  git:status:
+  git-status:
     desc: Show git status and diff
     cmds:
       - git --no-pager status
@@ -243,7 +243,7 @@ tasks:
       - echo "=== Recent commits ==="
       - git --no-pager log --oneline -5
 
-  git:sync:fork:
+  git-sync-fork:
     desc: Sync local main with fork remote
     summary: |
       Pull latest changes from fork remote and push to fork.
@@ -255,7 +255,7 @@ tasks:
       - git pull fork main
       - echo "✅ Synced with fork/main"
 
-  git:push:fork:
+  git-push-fork:
     desc: Push current branch to fork remote
     summary: |
       Push current branch to fork remote.
@@ -271,7 +271,7 @@ tasks:
       - echo "✅ Pushed {{.BRANCH}} to fork"
 
   # Development tasks
-  dev:setup:
+  dev-setup:
     desc: Setup development environment
     summary: |
       Install all required development tools.
@@ -291,7 +291,7 @@ tasks:
         echo "✅ Development tools installed"
       - task: deps
 
-  dev:watch:
+  dev-watch:
     desc: Watch for changes and rebuild
     summary: |
       Watch for file changes and automatically rebuild.
@@ -332,8 +332,8 @@ tasks:
       Simulate CI pipeline: deps, fmt check, vet, lint, test, build.
     cmds:
       - echo "🚀 Starting CI pipeline..."
-      - task: deps:tidy
-      - task: fmt:check
+      - task: deps-tidy
+      - task: fmt-check
       - task: vet
       - task: lint
       - task: test

@@ -37,3 +37,4 @@ dutis
 *.swp
 *.swo
 *~
+.task/

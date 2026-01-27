@@ -73,15 +73,21 @@ tasks:
 
   # Install/Uninstall tasks
   install:
-    desc: Install the binary to GOPATH/bin
+    desc: Install the binary to GOBIN
     summary: |
-      Install dutis to your GOPATH/bin directory.
+      Install dutis using 'go install'.
+      Binary will be installed to GOBIN (if set) or GOPATH/bin.
       
       Examples:
         task install
     cmds:
       - go install .
-      - echo "✅ Installed {{.APP_NAME}} to $(go env GOPATH)/bin"
+      - |
+        if [ -n "$(go env GOBIN)" ]; then
+          echo "✅ Installed {{.APP_NAME}} to $(go env GOBIN)"
+        else
+          echo "✅ Installed {{.APP_NAME}} to $(go env GOPATH)/bin"
+        fi
 
   uninstall:
     desc: Uninstall the binary from GOPATH/bin

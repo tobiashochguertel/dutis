@@ -6,6 +6,9 @@ vars:
   BIN_DIR: '{{.ROOT_DIR}}/bin'
   DIST_DIR: '{{.ROOT_DIR}}/dist'
   GO_VERSION: "1.24"
+  # Install location - defaults to ~/go/bin to avoid mise version switching issues
+  # Override with: task install INSTALL_DIR=/custom/path
+  INSTALL_DIR: '{{.INSTALL_DIR | default "~/go/bin"}}'
   DEBUG: '{{.DEBUG | default "false"}}'
 
 tasks:
@@ -13,6 +16,13 @@ tasks:
     desc: Show available tasks
     cmds:
       - task --list
+      - echo ""
+      - echo "📦 Installation Configuration"
+      - echo "  Default install location{{":"}} ~/go/bin"
+      - echo "  Current install location{{":"}} {{.INSTALL_DIR}}"
+      - echo ""
+      - echo "💡 To change install location{{":"}} task install INSTALL_DIR=/custom/path"
+      - echo "💡 Make sure {{.INSTALL_DIR}} is in your PATH"
 
   # Build tasks
   build:
@@ -73,32 +83,49 @@ tasks:
 
   # Install/Uninstall tasks
   install:
-    desc: Install the binary to GOBIN
+    desc: Install the binary to INSTALL_DIR
     summary: |
-      Install dutis using 'go install'.
-      Binary will be installed to GOBIN (if set) or GOPATH/bin.
+      Install dutis to INSTALL_DIR (default{{":"}} ~/go/bin).
+      This avoids issues with mise Go version switching.
       
       Examples:
-        task install
+        task install                           # Install to ~/go/bin
+        task install INSTALL_DIR=/usr/local/bin # Install to custom location
+    vars:
+      INSTALL_DIR: '{{.INSTALL_DIR}}'
     cmds:
-      - go install .
+      - mkdir -p {{.INSTALL_DIR}}
+      - cp {{.BIN_DIR}}/{{.APP_NAME}} {{.INSTALL_DIR}}/{{.APP_NAME}}
+      - chmod +x {{.INSTALL_DIR}}/{{.APP_NAME}}
+      - echo "✅ Installed {{.APP_NAME}} to {{.INSTALL_DIR}}"
       - |
-        if [ -n "$(go env GOBIN)" ]; then
-          echo "✅ Installed {{.APP_NAME}} to $(go env GOBIN)"
-        else
-          echo "✅ Installed {{.APP_NAME}} to $(go env GOPATH)/bin"
+        EXPANDED_DIR=$(eval echo "{{.INSTALL_DIR}}")
+        if ! echo "$PATH" | grep -q "$EXPANDED_DIR"; then
+          echo ""
+          echo "⚠️  Warning{{":"}} {{.INSTALL_DIR}} is not in your PATH"
+          echo "   Add to your shell profile{{":"}} export PATH=\"{{.INSTALL_DIR}}:\$PATH\""
         fi
+    deps:
+      - build
 
   uninstall:
-    desc: Uninstall the binary from GOPATH/bin
+    desc: Uninstall the binary from INSTALL_DIR
+    summary: |
+      Uninstall dutis from INSTALL_DIR (default{{":"}} ~/go/bin).
+      
+      Examples:
+        task uninstall
+        task uninstall INSTALL_DIR=/custom/path
+    vars:
+      INSTALL_DIR: '{{.INSTALL_DIR}}'
     cmds:
       - |
-        GOBIN=$(go env GOPATH)/bin
-        if [ -f "$GOBIN/{{.APP_NAME}}" ]; then
-          rm "$GOBIN/{{.APP_NAME}}"
-          echo "✅ Uninstalled {{.APP_NAME}} from $GOBIN"
+        EXPANDED_DIR=$(eval echo "{{.INSTALL_DIR}}")
+        if [ -f "$EXPANDED_DIR/{{.APP_NAME}}" ]; then
+          rm "$EXPANDED_DIR/{{.APP_NAME}}"
+          echo "✅ Uninstalled {{.APP_NAME}} from {{.INSTALL_DIR}}"
         else
-          echo "ℹ️  {{.APP_NAME}} not found in $GOBIN"
+          echo "ℹ️  {{.APP_NAME}} not found in {{.INSTALL_DIR}}"
         fi
 
   # Test tasks

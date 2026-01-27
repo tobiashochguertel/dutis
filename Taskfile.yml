@@ -1,0 +1,341 @@
+version: "3"
+
+vars:
+  APP_NAME: dutis
+  MODULE_PATH: github.com/tobiashochguertel/dutis
+  BIN_DIR: '{{.ROOT_DIR}}/bin'
+  DIST_DIR: '{{.ROOT_DIR}}/dist'
+  GO_VERSION: "1.24"
+  DEBUG: '{{.DEBUG | default "false"}}'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # Build tasks
+  build:
+    desc: Build the application
+    summary: |
+      Build the dutis binary for the current platform.
+      
+      Examples:
+        task build
+        task build DEBUG=true
+    vars:
+      BIN_DIR: '{{.BIN_DIR}}'
+    cmds:
+      - mkdir -p {{.BIN_DIR}}
+      - |
+        {{if eq .DEBUG "true"}}
+        echo "=== DEBUG INFO ==="
+        echo "APP_NAME={{.APP_NAME}}"
+        echo "MODULE_PATH={{.MODULE_PATH}}"
+        echo "BIN_DIR={{.BIN_DIR}}"
+        echo "=================="
+        {{end}}
+      - go build -o {{.BIN_DIR}}/{{.APP_NAME}} .
+      - echo "✅ Built {{.APP_NAME}} -> {{.BIN_DIR}}/{{.APP_NAME}}"
+    sources:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+    generates:
+      - '{{.BIN_DIR}}/{{.APP_NAME}}'
+
+  build:release:
+    desc: Build release binaries using goreleaser
+    summary: |
+      Build release artifacts using goreleaser (snapshot mode).
+      
+      Examples:
+        task build:release
+        task build:release -- --clean
+    cmds:
+      - goreleaser build --snapshot --clean {{.CLI_ARGS}}
+      - echo "✅ Release builds created in {{.DIST_DIR}}"
+
+  # Clean tasks
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf {{.BIN_DIR}} 2>/dev/null || true
+      - rm -rf {{.DIST_DIR}} 2>/dev/null || true
+      - echo "✅ Cleaned build artifacts"
+
+  clean:all:
+    desc: Remove all generated files including caches
+    cmds:
+      - task: clean
+      - go clean -cache -testcache -modcache
+      - echo "✅ Cleaned all artifacts and caches"
+
+  # Install/Uninstall tasks
+  install:
+    desc: Install the binary to GOPATH/bin
+    summary: |
+      Install dutis to your GOPATH/bin directory.
+      
+      Examples:
+        task install
+    cmds:
+      - go install .
+      - echo "✅ Installed {{.APP_NAME}} to $(go env GOPATH)/bin"
+
+  uninstall:
+    desc: Uninstall the binary from GOPATH/bin
+    cmds:
+      - |
+        GOBIN=$(go env GOPATH)/bin
+        if [ -f "$GOBIN/{{.APP_NAME}}" ]; then
+          rm "$GOBIN/{{.APP_NAME}}"
+          echo "✅ Uninstalled {{.APP_NAME}} from $GOBIN"
+        else
+          echo "ℹ️  {{.APP_NAME}} not found in $GOBIN"
+        fi
+
+  # Test tasks
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  test:coverage:
+    desc: Run tests with coverage report
+    cmds:
+      - mkdir -p {{.ROOT_DIR}}/coverage
+      - go test -v -coverprofile={{.ROOT_DIR}}/coverage/coverage.out ./...
+      - go tool cover -html={{.ROOT_DIR}}/coverage/coverage.out -o {{.ROOT_DIR}}/coverage/coverage.html
+      - echo "✅ Coverage report: {{.ROOT_DIR}}/coverage/coverage.html"
+
+  test:race:
+    desc: Run tests with race detector
+    cmds:
+      - go test -race -v ./...
+
+  # Quality tasks
+  lint:
+    desc: Run golangci-lint
+    summary: |
+      Run golangci-lint on the codebase.
+      
+      Install golangci-lint if not present:
+        brew install golangci-lint
+    cmds:
+      - golangci-lint run ./...
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+      - echo "✅ Code formatted"
+
+  fmt:check:
+    desc: Check if code is formatted
+    cmds:
+      - |
+        if [ -n "$(gofmt -l .)" ]; then
+          echo "❌ Code is not formatted. Run 'task fmt' to format."
+          gofmt -l .
+          exit 1
+        else
+          echo "✅ Code is properly formatted"
+        fi
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+      - echo "✅ Vet passed"
+
+  check:
+    desc: Run all quality checks (fmt, vet, lint, test)
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: lint
+      - task: test
+
+  # Dependency tasks
+  deps:
+    desc: Download dependencies
+    cmds:
+      - go mod download
+      - echo "✅ Dependencies downloaded"
+
+  deps:tidy:
+    desc: Tidy and verify dependencies
+    cmds:
+      - go mod tidy
+      - go mod verify
+      - echo "✅ Dependencies tidied and verified"
+
+  deps:outdated:
+    desc: Check for outdated dependencies
+    summary: |
+      List outdated Go dependencies.
+      
+      Uses 'go list -u -m all' to show available updates.
+    cmds:
+      - |
+        echo "Checking for outdated dependencies..."
+        go list -u -m all | grep '\[' || echo "✅ All dependencies up to date"
+
+  deps:upgrade:
+    desc: Upgrade all dependencies to latest
+    cmds:
+      - go get -u ./...
+      - task: deps:tidy
+      - echo "✅ Dependencies upgraded"
+
+  # Run tasks
+  run:
+    desc: Build and run the application
+    summary: |
+      Build and run dutis with optional arguments.
+      
+      Examples:
+        task run
+        task run -- help
+        task run -- --version
+    cmds:
+      - task: build
+      - '{{.BIN_DIR}}/{{.APP_NAME}} {{.CLI_ARGS}}'
+
+  # Release tasks
+  release:
+    desc: Create a release using goreleaser
+    summary: |
+      Create a new release and push to GitHub.
+      
+      Requires:
+        - Clean git working directory
+        - Proper git tag
+        - GITHUB_TOKEN environment variable
+      
+      Examples:
+        task release
+        task release -- --skip=publish  # Dry run
+    preconditions:
+      - sh: command -v goreleaser
+        msg: "goreleaser not found. Install with: brew install goreleaser"
+    cmds:
+      - |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "❌ Git working directory is not clean"
+          exit 1
+        fi
+      - goreleaser release {{.CLI_ARGS}}
+
+  release:snapshot:
+    desc: Create a snapshot release (no git tag required)
+    cmds:
+      - goreleaser release --snapshot --clean
+      - echo "✅ Snapshot release created in {{.DIST_DIR}}"
+
+  # Git tasks
+  git:status:
+    desc: Show git status and diff
+    cmds:
+      - git --no-pager status
+      - echo ""
+      - echo "=== Recent commits ==="
+      - git --no-pager log --oneline -5
+
+  git:sync:fork:
+    desc: Sync local main with fork remote
+    summary: |
+      Pull latest changes from fork remote and push to fork.
+      
+      Examples:
+        task git:sync:fork
+    cmds:
+      - git fetch fork
+      - git pull fork main
+      - echo "✅ Synced with fork/main"
+
+  git:push:fork:
+    desc: Push current branch to fork remote
+    summary: |
+      Push current branch to fork remote.
+      
+      Examples:
+        task git:push:fork
+        task git:push:fork -- --force-with-lease
+    vars:
+      BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
+    cmds:
+      - git push fork {{.BRANCH}} {{.CLI_ARGS}}
+      - echo "✅ Pushed {{.BRANCH}} to fork"
+
+  # Development tasks
+  dev:setup:
+    desc: Setup development environment
+    summary: |
+      Install all required development tools.
+      
+      Tools installed:
+        - golangci-lint (linter)
+        - goreleaser (release tool)
+    cmds:
+      - |
+        echo "Installing development tools..."
+        if ! command -v golangci-lint >/dev/null; then
+          brew install golangci-lint
+        fi
+        if ! command -v goreleaser >/dev/null; then
+          brew install goreleaser
+        fi
+        echo "✅ Development tools installed"
+      - task: deps
+
+  dev:watch:
+    desc: Watch for changes and rebuild
+    summary: |
+      Watch for file changes and automatically rebuild.
+      Requires 'watchexec' to be installed.
+      
+      Install: brew install watchexec
+    preconditions:
+      - sh: command -v watchexec
+        msg: "watchexec not found. Install with: brew install watchexec"
+    cmds:
+      - watchexec -e go -r -- task build
+
+  # Info tasks
+  info:
+    desc: Show project information
+    vars:
+      GO_VERSION:
+        sh: go version
+      COMMIT_HASH:
+        sh: git rev-parse --short HEAD
+      BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
+    cmds:
+      - |
+        echo "=== Project Information ==="
+        echo "App:           {{.APP_NAME}}"
+        echo "Module:        {{.MODULE_PATH}}"
+        echo "Go Version:    {{.GO_VERSION}}"
+        echo "Current Dir:   {{.ROOT_DIR}}"
+        echo "Branch:        {{.BRANCH}}"
+        echo "Commit:        {{.COMMIT_HASH}}"
+        echo "=========================="
+
+  # CI/CD simulation
+  ci:
+    desc: Run CI pipeline locally
+    summary: |
+      Simulate CI pipeline: deps, fmt check, vet, lint, test, build.
+    cmds:
+      - echo "🚀 Starting CI pipeline..."
+      - task: deps:tidy
+      - task: fmt:check
+      - task: vet
+      - task: lint
+      - task: test
+      - task: build
+      - echo "✅ CI pipeline completed successfully"

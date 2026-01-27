@@ -53,13 +53,10 @@ func installDuti() {
 		}
 	}
 
-	cmd := exec.Command("man", "duti")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-		fmt.Println("Error checking duti installation:", err)
-		return
-	} else {
+	// Verify duti is executable by checking if command exists
+	if commandExists("duti") {
 		fmt.Println("Duti works fine")
+	} else {
+		fmt.Println("Error: duti command not found after installation")
 	}
 }

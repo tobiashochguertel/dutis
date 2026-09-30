@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"github.com/mrtkrcm/dutis/util"
@@ -66,13 +67,12 @@ func inputWithDoubleCtrlC(prefix string, completer prompt.Completer) string {
 					consecutiveInterrupts++
 					if consecutiveInterrupts >= 2 {
 						fmt.Println("\nAre you sure you want to exit? (yes/no)")
-						confirm := prompt.Input("> ", func(d prompt.Document) []prompt.Suggest {
-							s := []prompt.Suggest{
-								{Text: "yes", Description: "Exit the application"},
-								{Text: "no", Description: "Continue"},
-							}
-							return prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), true)
-						})
+						fmt.Print("> ")
+						scanner := bufio.NewScanner(os.Stdin)
+						confirm := ""
+						if scanner.Scan() {
+							confirm = strings.TrimSpace(scanner.Text())
+						}
 						if confirm == "yes" {
 							os.Exit(0)
 						}
@@ -87,7 +87,9 @@ func inputWithDoubleCtrlC(prefix string, completer prompt.Completer) string {
 		),
 	)
 
-	return p.Input()
+	result := p.Input()
+	consecutiveInterrupts = 0
+	return result
 }
 
 func printRecommend(suf string) {
